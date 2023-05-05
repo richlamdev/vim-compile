@@ -10,6 +10,14 @@ sudo apt-get remove -y vim vim-runtime gvim vim-tiny vim-common vim-gui-common v
 sudo apt-get update
 sudo apt-get install -y build-essential libncurses5-dev libgtk2.0-dev libatk1.0-dev libcairo2-dev libx11-dev libxpm-dev libxt-dev python3-dev ruby-dev lua5.2 liblua5.2-dev libperl-dev git
 
+# check if vim folder exists, if it does then delete it
+
+if [ -d "vim" ]; then
+  # Control will enter here if $DIRECTORY exists.
+  echo "vim folder exists, deleting it"
+  rm -rf vim
+fi
+
 # Clone the Vim repository
 git clone https://github.com/vim/vim.git
 
@@ -30,7 +38,7 @@ git checkout $latest_version
 ./configure --with-features=huge --enable-gui=auto --enable-cscope --prefix=/usr/local --enable-python3interp --with-python3-config-dir=$(python3-config --configdir) --enable-fontset --enable-multibyte --enable-xim --with-x --enable-gui=gtk2 --with-compiledby="me!"
 
 # Compile and install Vim
-make -j6
+make -j4
 sudo make install
 
 # Download the xterm_clipboard patch
