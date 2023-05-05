@@ -28,6 +28,14 @@ if [ -d "vim" ]; then
   rm -rf vim
 fi
 
+# check if vim folder exists, if it does then delete it
+
+if [ -d "vim" ]; then
+  # Control will enter here if $DIRECTORY exists.
+  echo "vim folder exists, deleting it"
+  rm -rf vim
+fi
+
 # Clone the Vim repository
 git clone https://github.com/vim/vim.git
 
