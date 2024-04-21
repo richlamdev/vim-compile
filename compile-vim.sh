@@ -56,3 +56,5 @@ sudo make install
 # Display success message
 #echo "Vim and xterm with clipboard support have been installed successfully."
 echo "Vim with clipboard support has been installed successfully."
+
+exit 0
