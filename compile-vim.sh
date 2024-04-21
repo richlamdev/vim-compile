@@ -35,10 +35,11 @@ git checkout $latest_version
 
 # Configure the build with clipboard support
 #./configure --with-features=huge --enable-gui=auto --enable-cscope --prefix=/usr/local --enable-python3interp --with-python3-config-dir=$(python3-config --configdir) --enable-fontset --enable-multibyte --enable-xim --with-x --enable-gui=gtk2 --with-compiledby="Your Name" --with-clipboard
-./configure --with-features=huge --enable-gui=auto --enable-cscope --prefix=/usr/local --enable-python3interp --with-python3-config-dir=$(python3-config --configdir) --enable-fontset --enable-multibyte --enable-xim --with-x --enable-gui=gtk2 --with-compiledby="me!"
+#./configure --with-features=huge --enable-gui=auto --enable-cscope --prefix=/usr/local --enable-python3interp --with-python3-config-dir=$(python3-config --configdir) --enable-fontset --enable-multibyte --enable-xim --with-x --enable-gui=gtk2 --with-compiledby="me!"
+./configure --with-features=huge --prefix=/usr/local --enable-fontset --with-x --enable-gui=gtk2 --with-compiledby="me!"
 
 # Compile and install Vim
-make -j4
+make -j8
 sudo make install
 
 # Download the xterm_clipboard patch
@@ -71,5 +72,3 @@ sudo make install
 # Display success message
 #echo "Vim and xterm with clipboard support have been installed successfully."
 echo "Vim with clipboard support have been installed successfully."
-
-
