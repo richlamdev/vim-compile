@@ -1,60 +1,79 @@
 #!/bin/bash
+set -euo pipefail
 
-# Remove any existing Vim or related software
-sudo apt-get remove -y vim vim-runtime gvim vim-tiny vim-common vim-gui-common vim-nox
+VIM_SRC="$HOME/src/vim"
+PREFIX="/usr/local"
 
 # Install build dependencies
 sudo apt-get update
 sudo apt-get install -y \
   build-essential \
   libncurses5-dev \
-  libgtk2.0-dev \
-  libatk1.0-dev \
-  libcairo2-dev \
   libx11-dev \
-  libxpm-dev \
   libxt-dev \
+  libxpm-dev \
   python3-dev \
-  ruby-dev \
-  lua5.2 \
-  liblua5.2-dev \
-  libperl-dev \
   git
 
-# check if vim folder exists, if it does then delete it
-
-if [ -d "vim" ]; then
-  # Control will enter here if $DIRECTORY exists.
-  echo "vim folder exists, deleting it"
-  rm -rf vim
+# Clone or fetch
+if [ -d "$VIM_SRC/.git" ]; then
+  echo "Existing repo found, fetching updates..."
+  cd "$VIM_SRC"
+  git fetch --tags --prune
+else
+  echo "Cloning Vim repository..."
+  mkdir -p "$(dirname "$VIM_SRC")"
+  git clone https://github.com/vim/vim.git "$VIM_SRC"
+  cd "$VIM_SRC"
 fi
 
-# Clone the Vim repository
-git clone https://github.com/vim/vim.git
-
-# Change to the Vim directory
-cd vim
-
-# Update the Vim repository
-#git pull
-
-# Get the latest version number
+# Determine latest tag
 latest_version=$(git tag | sort -V | tail -n 1)
+current_version=$(git describe --tags --exact-match 2>/dev/null || echo "none")
 
-# Checkout the latest version
-git checkout $latest_version
+if [ "$current_version" = "$latest_version" ] && command -v vim &>/dev/null; then
+  installed_version=$(vim --version | head -1)
+  echo "Already on latest tag ($latest_version)."
+  echo "Installed: $installed_version"
+  read -rp "Rebuild anyway? [y/N] " reply
+  if [[ ! "$reply" =~ ^[Yy]$ ]]; then
+    echo "Nothing to do."
+    exit 0
+  fi
+fi
 
-# Configure the build with clipboard support
-#./configure --with-features=huge --enable-gui=auto --enable-cscope --prefix=/usr/local --enable-python3interp --with-python3-config-dir=$(python3-config --configdir) --enable-fontset --enable-multibyte --enable-xim --with-x --enable-gui=gtk2 --with-compiledby="Your Name" --with-clipboard
-#./configure --with-features=huge --enable-gui=auto --enable-cscope --prefix=/usr/local --enable-python3interp --with-python3-config-dir=$(python3-config --configdir) --enable-fontset --enable-multibyte --enable-xim --with-x --enable-gui=gtk2 --with-compiledby="me!"
-./configure --with-features=huge --prefix=/usr/local --enable-fontset --with-x --enable-gui=gtk2 --with-compiledby="me!"
+echo "Building Vim $latest_version..."
 
-# Compile and install Vim
-make -j8
+# Clean previous build artifacts
+git checkout "$latest_version"
+git clean -fdx
+make distclean 2>/dev/null || true
+
+# Optional: CPU optimizations for speed
+export CFLAGS="-O2 -march=native"
+export LDFLAGS="-Wl,-O1"
+
+./configure \
+  --with-features=huge \
+  --prefix="$PREFIX" \
+  --enable-python3interp \
+  --with-python3-config-dir="$(python3-config --configdir)" \
+  --with-x \
+  --with-compiledby="$(whoami) $(date '+%Y-%m-%d %H:%M:%S')"
+
+make -j"$(nproc)"
 sudo make install
 
-# Display success message
-#echo "Vim and xterm with clipboard support have been installed successfully."
-echo "Vim with clipboard support has been installed successfully."
+# Verify
+echo ""
+echo "=== Build complete ==="
+echo "Installed to: $(which vim)"
+vim --version | head -1
+vim --version | grep -oE '(\+|-)(clipboard|xterm_clipboard|python3)' | sort
 
-exit 0
+# Warn if system vim would shadow our build
+if [ "$(which vim)" != "$PREFIX/bin/vim" ]; then
+  echo ""
+  echo "WARNING: $(which vim) is taking precedence over $PREFIX/bin/vim"
+  echo "Ensure $PREFIX/bin is early in your \$PATH"
+fi
