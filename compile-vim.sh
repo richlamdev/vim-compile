@@ -27,18 +27,28 @@ else
   cd "$VIM_SRC"
 fi
 
-# Determine latest tag
 latest_version=$(git tag | sort -V | tail -n 1)
-current_version=$(git describe --tags --exact-match 2>/dev/null || echo "none")
 
-if [ "$current_version" = "$latest_version" ] && command -v vim &>/dev/null; then
-  installed_version=$(vim --version | head -1)
-  echo "Already on latest tag ($latest_version)."
-  echo "Installed: $installed_version"
-  read -rp "Rebuild anyway? [y/N] " reply
-  if [[ ! "$reply" =~ ^[Yy]$ ]]; then
-    echo "Nothing to do."
-    exit 0
+# Compare against installed Vim
+if command -v vim &>/dev/null; then
+  # Build version string from vim --version output
+  # e.g., "9.2" from first line + "1234" from "Included patches: 1-1234"
+  # Compare as integers to avoid zero-padding mismatch (tag: 0280, patches: 280)
+  installed_patch=$(vim --version | grep -oP 'Included patches: 1-\K\d+' || echo "0")
+  tag_patch=$(echo "$latest_version" | grep -oP '\d+\.\d+\.\K\d+')
+  # Remove leading zeros for comparison
+  installed_patch=$((10#$installed_patch))
+  tag_patch=$((10#$tag_patch))
+
+  if [ "$installed_patch" -eq "$tag_patch" ]; then
+    echo "Installed Vim (patch $installed_patch) matches latest tag ($latest_version)."
+    read -rp "Rebuild anyway? [y/N] " reply
+    if [[ ! "$reply" =~ ^[Yy]$ ]]; then
+      echo "Nothing to do."
+      exit 0
+    fi
+  else
+    echo "Installed patch: $installed_patch | Latest: $latest_version (patch $tag_patch)"
   fi
 fi
 
@@ -49,7 +59,7 @@ git checkout "$latest_version"
 git clean -fdx
 make distclean 2>/dev/null || true
 
-# Optional: CPU optimizations for speed
+# Compiler optimizations
 export CFLAGS="-O2 -march=native"
 export LDFLAGS="-Wl,-O1"
 
