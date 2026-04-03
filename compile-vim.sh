@@ -69,7 +69,7 @@ export LDFLAGS="-Wl,-O1"
   --enable-python3interp \
   --with-python3-config-dir="$(python3-config --configdir)" \
   --with-x \
-  --with-compiledby="$(whoami) $(date '+%Y-%m-%d %H:%M:%S')"
+  --with-compiledby="$(whoami)  $latest_version"
 
 make -j"$(nproc)"
 sudo make install
@@ -77,6 +77,10 @@ sudo make install
 # Verify
 echo ""
 echo "=== Build complete ==="
+echo ""
+echo "Previous patch version: ${installed_patch}"
+echo "New patch version: ${tag_patch}"
+echo ""
 echo "Installed to: $(which vim)"
 vim --version | head -1
 vim --version | grep -oE '(\+|-)(clipboard|xterm_clipboard|python3)' | sort
