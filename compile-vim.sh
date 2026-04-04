@@ -28,12 +28,10 @@ else
 fi
 
 latest_version=$(git tag | sort -V | tail -n 1)
+installed_patch="none"
 
 # Compare against installed Vim
 if command -v vim &>/dev/null; then
-  # Build version string from vim --version output
-  # e.g., "9.2" from first line + "1234" from "Included patches: 1-1234"
-  # Compare as integers to avoid zero-padding mismatch (tag: 0280, patches: 280)
   installed_patch=$(vim --version | grep -oP 'Included patches: 1-\K\d+' || echo "0")
   tag_patch=$(echo "$latest_version" | grep -oP '\d+\.\d+\.\K\d+')
   # Remove leading zeros for comparison
@@ -69,7 +67,7 @@ export LDFLAGS="-Wl,-O1"
   --enable-python3interp \
   --with-python3-config-dir="$(python3-config --configdir)" \
   --with-x \
-  --with-compiledby="$(whoami)  $latest_version"
+  --with-compiledby="$(whoami)  Github Tag: $latest_version"
 
 make -j"$(nproc)"
 sudo make install
@@ -82,8 +80,10 @@ echo "Previous patch version: ${installed_patch}"
 echo "New patch version: ${tag_patch}"
 echo ""
 echo "Installed to: $(which vim)"
-vim --version | head -1
-vim --version | grep -oE '(\+|-)(clipboard|xterm_clipboard|python3)' | sort
+vim --version | head -3
+echo ""
+echo "Primary Vim features:"
+vim --version | grep -oP '(\+|-)(clipboard|xterm_clipboard|python3)(?=\s|$)' | sort
 
 # Warn if system vim would shadow our build
 if [ "$(which vim)" != "$PREFIX/bin/vim" ]; then
